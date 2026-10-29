@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 52" fill="none" width="240" height="52">
+  <defs>
+    <linearGradient id="wordmark_grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+  </defs>
+  <!-- Mark icon -->
+  <g transform="translate(2, 4)">
+    <rect x="0" y="0" width="44" height="44" rx="11" fill="#0B1F4D" />
+    <path d="M11 29C14 27.5 18 27.5 22 29.5C26 27.5 30 27.5 33 29V16C30 14.5 26 14.5 22 16.5C18 14.5 14 14.5 11 16V29Z" fill="url(#wordmark_grad)" />
+    <path d="M22 16.5V29.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M22 8L23.1 11.2L26.2 11.8L23.7 13.7L24.4 16.8L22 15L19.6 16.8L20.3 13.7L17.8 11.8L20.9 11.2L22 8Z" fill="#F59E0B" />
+  </g>
+  <!-- Text: Learnova -->
+  <text x="56" y="31" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="24" fill="#0B1F4D" letter-spacing="-0.5">Learn<tspan fill="#2563EB">ova</tspan></text>
+  <!-- Tagline: A New Way to Learn. -->
+  <text x="57" y="44" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="9" fill="#06B6D4" letter-spacing="0.5">A NEW WAY TO LEARN.</text>
+</svg>
+

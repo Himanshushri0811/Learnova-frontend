@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" width="48" height="48">
+  <defs>
+    <linearGradient id="learnova_grad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+  </defs>
+  <!-- Background rounded hexagon / shield in deep navy -->
+  <rect x="4" y="4" width="40" height="40" rx="12" fill="#0B1F4D" />
+  <!-- Dynamic Open Book & Rising Star Motif -->
+  <path d="M14 31C17 29.5 21 29.5 24 31.5C27 29.5 31 29.5 34 31V18C31 16.5 27 16.5 24 18.5C21 16.5 17 16.5 14 18V31Z" fill="url(#learnova_grad)" />
+  <path d="M24 18.5V31.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+  <!-- Achievement Sparkle / Star in Gold -->
+  <path d="M24 10L25.2 13.5L28.5 14.2L25.8 16.2L26.6 19.5L24 17.5L21.4 19.5L22.2 16.2L19.5 14.2L22.8 13.5L24 10Z" fill="#F59E0B" />
+</svg>
+

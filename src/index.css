@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Learnova Brand Colors */
+  --color-brand-primary: #20309A;
+  --color-brand-secondary: #BB232B;
+  --color-brand-white: #FFFFFF;
+
+  /* Theme Colors */
+  --color-brand-surface: #FFFFFF;
+  --color-brand-navy: #20309A;
+  --color-brand-blue: #20309A;
+  --color-brand-cyan: #20309A;
+  --color-brand-gold: #BB232B;
+  --color-brand-text: #1F2937;
+
+  /* Soft backgrounds */
+  --color-brand-blue-light: #EEF0FF;
+  --color-brand-red-light: #FFF0F0;
+  --color-brand-border: #E5E7EB;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-brand-surface);
+  color: var(--color-brand-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Learnova primary brand button */
+.bg-brand-navy {
+  background-color: var(--color-brand-primary);
+}
+
+.text-brand-navy {
+  color: var(--color-brand-primary);
+}
+
+.bg-brand-blue {
+  background-color: var(--color-brand-primary);
+}
+
+.text-brand-blue {
+  color: var(--color-brand-primary);
+}
+
+/* Tomato red accents */
+.bg-brand-gold {
+  background-color: var(--color-brand-secondary);
+}
+
+.text-brand-gold {
+  color: var(--color-brand-secondary);
+}
+
+/* Light brand backgrounds */
+.bg-brand-blue-light {
+  background-color: var(--color-brand-blue-light);
+}
+
+.bg-brand-red-light {
+  background-color: var(--color-brand-red-light);
+}
+
+/* Watermark background utility */
+.bg-brand-watermark {
+  background-image: url('/brand/learnova-watermark.svg');
+  background-repeat: no-repeat;
+  background-position: right -20px top -20px;
+  background-size: 240px 240px;
+}
