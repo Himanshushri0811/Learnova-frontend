@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
@@ -12,6 +11,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { UserRole } from '../../types';
+import { apiRequest } from '../../lib/api';
 
 interface LoginResponse {
   status: string;
@@ -19,6 +19,7 @@ interface LoginResponse {
   user?: {
     id: string;
     email: string;
+    name?: string;
     role: UserRole;
   };
   message?: string;
@@ -47,58 +48,54 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (selectedRole !== 'admin') {
+    if (selectedRole === 'guardian') {
       setError(
-        'Student and Guardian login are not available yet. Please select Admin.'
+        'Guardian portal authentication is under active development. Please select Admin or Student.'
       );
       return;
     }
 
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError('Please enter your credentials.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(
-        'http://localhost:5000/api/v1/auth/login',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        }
-      );
+      const data = await apiRequest<LoginResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
+      });
 
-      const data: LoginResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid email or password.');
+      if (!data.token || !data.user) {
+        throw new Error('Invalid login response received from server.');
       }
 
-      if (!data.token || !data.user || data.user.role !== 'admin') {
-        throw new Error('Invalid login response received from server.');
+      if (selectedRole === 'admin' && data.user.role !== 'admin') {
+        throw new Error('These credentials belong to a non-admin account. Please switch role.');
+      }
+
+      if (selectedRole === 'student' && data.user.role !== 'student') {
+        throw new Error('These credentials belong to an admin account. Please switch to Admin login.');
       }
 
       localStorage.setItem('learnova_token', data.token);
       localStorage.setItem('learnova_user', JSON.stringify(data.user));
 
-      navigate('/admin', { replace: true });
+      if (data.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/student', { replace: true });
+      }
     } catch (err: unknown) {
-      if (err instanceof TypeError) {
-        setError(
-          'Cannot connect to Learnova server. Please ensure the backend is running on port 5000.'
-        );
-      } else if (err instanceof Error) {
+      if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Something went wrong. Please try again.');
+        setError('Something went wrong. Please check your connection and try again.');
       }
     } finally {
       setLoading(false);
@@ -146,7 +143,7 @@ export const LoginPage: React.FC = () => {
               >
                 <GraduationCap className="w-5 h-5 mb-1" />
                 <span>Student</span>
-                <span className="text-[10px] mt-1">Coming soon</span>
+                <span className="text-[10px] mt-1 text-emerald-600 font-semibold">Available</span>
               </button>
 
               <button
@@ -178,7 +175,7 @@ export const LoginPage: React.FC = () => {
               >
                 <UserCheck className="w-5 h-5 mb-1" />
                 <span>Admin / Tutor</span>
-                <span className="text-[10px] mt-1">Available</span>
+                <span className="text-[10px] mt-1 text-emerald-600 font-semibold">Available</span>
               </button>
             </div>
           </div>
@@ -212,7 +209,7 @@ export const LoginPage: React.FC = () => {
                 className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-blue bg-white text-brand-text"
               >
                 <option value="admin">Administrator / Tutor</option>
-                <option value="student">Student (Coming soon)</option>
+                <option value="student">Student</option>
                 <option value="guardian">Parent / Guardian (Coming soon)</option>
               </select>
             </div>
@@ -241,8 +238,8 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={
                     selectedRole === 'student'
-                      ? 'Enter your student username'
-                      : 'Enter your admin email'
+                      ? 'Enter student username'
+                      : 'Enter admin email'
                   }
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-blue text-brand-text"
                 />
@@ -269,7 +266,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter password"
                   className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-blue text-brand-text"
                 />
               </div>
