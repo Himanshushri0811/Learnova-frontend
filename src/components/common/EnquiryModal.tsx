@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, Send, PhoneCall } from 'lucide-react';
+import { X, CheckCircle, Send, PhoneCall, AlertCircle } from 'lucide-react';
 import { BRAND_CONFIG } from '../../utils/config';
+import { apiRequest } from '../../lib/api';
 
 interface EnquiryModalProps {
   isOpen: boolean;
@@ -17,22 +18,35 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({ isOpen, onClose }) =
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
-    // Simulate submission / send to API if reachable
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await apiRequest('/enquiry', {
+        method: 'POST',
+        body: JSON.stringify(formData),
+      });
       setSubmitted(true);
-    }, 600);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to submit enquiry right now. Please try reaching out directly via phone.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResetAndClose = () => {
     setSubmitted(false);
+    setError('');
     setFormData({
       studentName: '',
       gradeLevel: 'Class 8',
@@ -89,6 +103,16 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({ isOpen, onClose }) =
             <p className="text-sm text-slate-600 mb-6">
               Share student details to discuss personal attention, syllabus pacing, and offline batch scheduling.
             </p>
+
+            {error && (
+              <div
+                role="alert"
+                className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -187,4 +211,3 @@ export const EnquiryModal: React.FC<EnquiryModalProps> = ({ isOpen, onClose }) =
     </div>
   );
 };
-
