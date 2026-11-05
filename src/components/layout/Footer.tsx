@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/login?role=student" className="hover:text-brand-cyan transition-colors">
+                <Link to="/student/login" className="hover:text-brand-cyan transition-colors">
                   Student Portal
                 </Link>
               </li>
@@ -79,7 +79,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/login?role=admin" className="hover:text-brand-cyan transition-colors">
+                <Link to="/admin/login" className="hover:text-brand-cyan transition-colors">
                   Admin & Tutor Workspace
                 </Link>
               </li>

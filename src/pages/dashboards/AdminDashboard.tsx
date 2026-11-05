@@ -12,6 +12,9 @@ import {
   Save,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  CheckCircle2,
+  X,
 } from 'lucide-react';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { apiRequest } from '../../lib/api';
@@ -19,9 +22,9 @@ import { apiRequest } from '../../lib/api';
 interface Student {
   _id: string;
   name: string;
-  gradeLevel: string;
-  guardianName: string;
-  guardianPhone: string;
+  gradeLevel?: string;
+  guardianName?: string;
+  guardianPhone?: string;
   guardianEmail?: string;
   username?: string;
   academicNotes?: string;
@@ -70,6 +73,10 @@ interface StudentResponse {
   status: string;
   data: {
     student: Student;
+    credentials?: {
+      username: string;
+      initialPassword: string;
+    };
   };
 }
 
@@ -137,6 +144,11 @@ export function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    username: string;
+    initialPassword: string;
+  } | null>(null);
+  const [copiedCredentials, setCopiedCredentials] = useState(false);
   const [attendanceDate, setAttendanceDate] = useState(getLocalDate);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
   const [attendanceStatuses, setAttendanceStatuses] = useState<
@@ -421,9 +433,9 @@ export function AdminDashboard() {
       const matchesSearch =
         !term ||
         student.name.toLowerCase().includes(term) ||
-        student.gradeLevel.toLowerCase().includes(term) ||
-        student.guardianName.toLowerCase().includes(term) ||
-        student.guardianPhone.toLowerCase().includes(term);
+        (student.gradeLevel ?? '').toLowerCase().includes(term) ||
+        (student.guardianName ?? '').toLowerCase().includes(term) ||
+        (student.guardianPhone ?? '').toLowerCase().includes(term);
 
       return matchesStatus && matchesSearch;
     });
@@ -434,6 +446,8 @@ export function AdminDashboard() {
     setForm(emptyForm);
     setNotice('');
     setError('');
+    setCreatedCredentials(null);
+    setCopiedCredentials(false);
     setShowForm(true);
   };
 
@@ -441,9 +455,9 @@ export function AdminDashboard() {
     setEditingId(student._id);
     setForm({
       name: student.name,
-      gradeLevel: student.gradeLevel,
-      guardianName: student.guardianName,
-      guardianPhone: student.guardianPhone,
+      gradeLevel: student.gradeLevel ?? '',
+      guardianName: student.guardianName ?? '',
+      guardianPhone: student.guardianPhone ?? '',
       guardianEmail: student.guardianEmail ?? '',
       academicNotes: student.academicNotes ?? '',
       username: student.username ?? '',
@@ -489,11 +503,14 @@ export function AdminDashboard() {
         });
         setNotice('Student record updated successfully.');
       } else {
-        await apiRequest<StudentResponse>('/students', {
+        const response = await apiRequest<StudentResponse>('/students', {
           method: 'POST',
           body: JSON.stringify(payload),
         });
         setNotice('Student enrolled successfully.');
+        if (response.data.credentials) {
+          setCreatedCredentials(response.data.credentials);
+        }
       }
 
       closeForm();
@@ -547,6 +564,19 @@ export function AdminDashboard() {
     }
   };
 
+  const copyCreatedCredentials = async () => {
+    if (!createdCredentials) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        `Username: ${createdCredentials.username}\nPassword: ${createdCredentials.initialPassword}`
+      );
+      setCopiedCredentials(true);
+    } catch {
+      setError('Clipboard access failed. Copy the credentials manually from this panel.');
+    }
+  };
+
   return (
     <DashboardLayout
       role="admin"
@@ -579,6 +609,53 @@ export function AdminDashboard() {
         >
           {notice}
         </div>
+      )}
+
+      {createdCredentials && (
+        <section
+          aria-labelledby="student-credentials-title"
+          className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="student-credentials-title" className="font-semibold">
+                Student account created
+              </h2>
+              <p className="mt-1 text-sm">
+                Save these credentials for initial delivery. The password will not be shown again.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCreatedCredentials(null);
+                setCopiedCredentials(false);
+              }}
+              aria-label="Dismiss student credentials"
+              className="rounded p-1 hover:bg-emerald-100"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <dl className="mt-3 space-y-2 text-sm">
+            <div>
+              <dt className="font-medium">Username</dt>
+              <dd className="select-all font-mono">{createdCredentials.username}</dd>
+            </div>
+            <div>
+              <dt className="font-medium">Initial password</dt>
+              <dd className="select-all font-mono">{createdCredentials.initialPassword}</dd>
+            </div>
+          </dl>
+          <button
+            type="button"
+            onClick={() => void copyCreatedCredentials()}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-semibold text-emerald-900"
+          >
+            {copiedCredentials ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+            {copiedCredentials ? 'Copied' : 'Copy credentials'}
+          </button>
+        </section>
       )}
 
       {activeTab === 'overview' && (
@@ -720,6 +797,7 @@ export function AdminDashboard() {
                       setForm({ ...form, gradeLevel: e.target.value })
                     }
                   >
+                    <option value="">Not provided</option>
                     {Array.from({ length: 10 }, (_, index) => (
                       <option key={index + 1} value={`Class ${index + 1}`}>
                         Class {index + 1}
@@ -769,10 +847,9 @@ export function AdminDashboard() {
                 </label>
 
                 <label className="text-sm font-medium text-slate-700">
-                  Student username *
+                  Student username (optional)
                   <input
                     className={`${inputClass} mt-1`}
-                    required={!editingId}
                     minLength={4}
                     maxLength={30}
                     autoComplete="off"
@@ -782,12 +859,13 @@ export function AdminDashboard() {
                 </label>
 
                 <label className="text-sm font-medium text-slate-700">
-                  {editingId ? 'New password (leave blank to keep current)' : 'Student password *'}
+                  {editingId
+                    ? 'New password (leave blank to keep current)'
+                    : 'Student password (optional; leave blank to generate one)'}
                   <input
                     className={`${inputClass} mt-1`}
                     type="password"
-                    required={!editingId}
-                    minLength={12}
+                    minLength={8}
                     maxLength={128}
                     autoComplete="new-password"
                     value={form.password}
@@ -883,11 +961,11 @@ export function AdminDashboard() {
                         <td className="px-4 py-3 font-medium text-brand-navy">
                           {student.name}
                         </td>
-                        <td className="px-4 py-3">{student.gradeLevel}</td>
+                        <td className="px-4 py-3">{student.gradeLevel || 'Not provided'}</td>
                         <td className="px-4 py-3">
-                          <div>{student.guardianName}</div>
+                          <div>{student.guardianName || 'Not provided'}</div>
                           <div className="text-xs text-slate-500">
-                            {student.guardianPhone}
+                            {student.guardianPhone || ''}
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-slate-500">
@@ -967,7 +1045,7 @@ export function AdminDashboard() {
             <label className="text-sm font-medium text-slate-700">Student *
               <select required className={`${inputClass} mt-1`} value={feeStudentId} onChange={(event) => setFeeStudentId(event.target.value)}>
                 <option value="">Select student</option>
-                {activeStudents.map((student) => <option key={student._id} value={student._id}>{student.name} — {student.gradeLevel}</option>)}
+                {activeStudents.map((student) => <option key={student._id} value={student._id}>{student.name}{student.gradeLevel ? ` — ${student.gradeLevel}` : ''}</option>)}
               </select>
             </label>
             <label className="text-sm font-medium text-slate-700">Fee amount (₹) *
@@ -1060,7 +1138,7 @@ export function AdminDashboard() {
                 <option value="">Select a student</option>
                 {activeStudents.map((student) => (
                   <option key={student._id} value={student._id}>
-                    {student.name} — {student.gradeLevel}
+                    {student.name}{student.gradeLevel ? ` — ${student.gradeLevel}` : ''}
                   </option>
                 ))}
               </select>
@@ -1078,7 +1156,7 @@ export function AdminDashboard() {
                   </h3>
                   <p className="mt-1 text-sm text-slate-500">
                     {selectedCalendarStudent
-                      ? `${selectedCalendarStudent.name} · ${selectedCalendarStudent.gradeLevel}`
+                      ? `${selectedCalendarStudent.name}${selectedCalendarStudent.gradeLevel ? ` · ${selectedCalendarStudent.gradeLevel}` : ''}`
                       : 'Choose a student to view their calendar'}
                   </p>
                 </div>
@@ -1187,7 +1265,7 @@ export function AdminDashboard() {
                       {attendanceRows.map((row) => (
                         <tr key={row.student._id}>
                           <td className="px-4 py-3 font-medium text-brand-navy">{row.student.name}</td>
-                          <td className="px-4 py-3">{row.student.gradeLevel}</td>
+                          <td className="px-4 py-3">{row.student.gradeLevel || 'Not provided'}</td>
                           <td className="px-4 py-3">
                             <select
                               className={inputClass}

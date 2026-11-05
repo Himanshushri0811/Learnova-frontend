@@ -1,0 +1,29 @@
+.student-portal button,
+.student-portal a,
+.student-portal input,
+.student-portal select,
+.student-portal textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.student-page-enter {
+  animation: student-page-enter 180ms ease-out both;
+}
+
+@keyframes student-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-page-enter {
+    animation: none;
+  }
+}

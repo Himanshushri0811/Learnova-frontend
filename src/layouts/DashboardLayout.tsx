@@ -66,8 +66,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     } else if (role === 'student') {
       return [
         { name: 'Personal Dashboard', href: '/student', tabKey: 'overview', icon: Home },
-        { name: 'My Homework', href: '/student', tabKey: 'homework', icon: ClipboardList },
         { name: 'Attendance History', href: '/student', tabKey: 'attendance', icon: Calendar },
+        { name: 'Tuition Fees', href: '/student', tabKey: 'fees', icon: Wallet },
+        { name: 'My Homework', href: '/student', tabKey: 'homework', icon: ClipboardList },
         { name: 'Sunday Quizzes', href: '/student', tabKey: 'quizzes', icon: Award },
         { name: 'Results & Progress', href: '/student', tabKey: 'results', icon: BarChart3 },
       ];
@@ -84,9 +85,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   const navItems = getNavItems();
 
+  const userJson = localStorage.getItem('learnova_user');
+  let currentUser: { name?: string; email?: string; username?: string; role?: string } | null = null;
+  if (userJson) {
+    try {
+      currentUser = JSON.parse(userJson);
+    } catch {
+      currentUser = null;
+    }
+  }
+
   const handleLogout = () => {
+    localStorage.removeItem('learnova_token');
     localStorage.removeItem('learnova_user');
-    navigate('/login');
+    navigate(role === 'admin' ? '/admin/login' : '/student/login', { replace: true });
   };
 
   const getRoleBadge = () => {
@@ -210,11 +222,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div className="p-4 border-t border-white/10 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2 overflow-hidden">
             <div className="w-7 h-7 rounded-full bg-brand-blue/30 text-brand-cyan flex items-center justify-center font-bold text-xs uppercase shrink-0">
-              {role.charAt(0)}
+              {(currentUser?.name || currentUser?.username || role).charAt(0)}
             </div>
             <div className="truncate">
-              <div className="font-semibold text-white truncate capitalize">{role} User</div>
-              <div className="text-[10px] text-slate-400 truncate">demo@{role}.local</div>
+              <div className="font-semibold text-white truncate">
+                {currentUser?.name || (role === 'admin' ? 'Administrator' : 'Student')}
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">
+                {currentUser?.username ? `@${currentUser.username}` : currentUser?.email || `${role}@learnova.local`}
+              </div>
             </div>
           </div>
           <button

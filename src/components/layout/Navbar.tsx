@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               <span>Enquire About Tuition</span>
             </button>
             <Link
-              to="/login"
+              to="/student/login"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-brand-navy hover:bg-brand-navyLight rounded-lg transition-colors shadow-sm"
             >
               <LogIn className="w-4 h-4 text-brand-cyan" />
@@ -151,7 +151,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               <span>Enquire About Tuition</span>
             </button>
             <Link
-              to="/login"
+              to="/student/login"
               onClick={() => setMobileMenuOpen(false)}
               className="w-full inline-flex justify-center items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-brand-navy rounded-lg"
             >

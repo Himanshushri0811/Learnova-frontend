@@ -1,3 +1,7 @@
+const DEFAULT_API_BASE_URL = import.meta.env.PROD
+  ? 'https://learnova-backend-mt3t.onrender.com/api/v1'
+  : 'http://localhost:5000/api/v1';
+
 export const BRAND_CONFIG = {
   name: 'Learnova',
   tagline: 'A New Way to Learn.',
@@ -15,6 +19,5 @@ export const BRAND_CONFIG = {
     whatsappRaw: import.meta.env.VITE_BRAND_WHATSAPP || '',
     email: import.meta.env.VITE_BRAND_EMAIL || 'contact@learnova.local',
   },
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
 };
-
