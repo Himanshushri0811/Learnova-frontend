@@ -1,659 +1,486 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BookOpen,
-  Users,
-  CheckCircle2,
-  Calendar,
-  ClipboardList,
-  BarChart3,
-  MessageCircle,
-  ExternalLink,
-  Sparkles,
   ArrowRight,
-  ShieldCheck,
-  GraduationCap,
   Award,
-  Layers,
-  Phone,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  ClipboardList,
+  ExternalLink,
+  GraduationCap,
   HelpCircle,
+  MessageCircle,
+  PhoneCall,
+  Sparkles,
+  Users,
+  UserRound,
 } from 'lucide-react';
 import { BRAND_CONFIG } from '../utils/config';
 import { EnquiryModal } from '../components/common/EnquiryModal';
+
+const benefits = [
+  {
+    title: 'Concept-Based Learning',
+    description: 'Help students understand concepts instead of relying only on memorization.',
+    icon: BookOpen,
+    tone: 'blue',
+  },
+  {
+    title: 'Personalized Attention',
+    description: 'Understand each student’s learning needs and offer individual guidance.',
+    icon: Users,
+    tone: 'cyan',
+  },
+  {
+    title: 'Weak Student Support',
+    description: 'Give additional guidance to students who need more help.',
+    icon: HelpCircle,
+    tone: 'violet',
+  },
+  {
+    title: 'Regular Assessment',
+    description: 'Conduct regular tests and Sunday quizzes to check understanding.',
+    icon: Calendar,
+    tone: 'gold',
+  },
+  {
+    title: 'Homework Monitoring',
+    description: 'Encourage consistency and discipline through regular homework follow-up.',
+    icon: ClipboardList,
+    tone: 'pink',
+  },
+  {
+    title: 'Parent Communication',
+    description: 'Keep parents informed about student progress.',
+    icon: MessageCircle,
+    tone: 'green',
+  },
+] as const;
+
+const learningSteps = [
+  ['Assess', "Understand the student's current level and learning needs."],
+  ['Explain', 'Build concept clarity with clear explanations and real examples.'],
+  ['Practice', 'Homework and practice questions.'],
+  ['Test', 'Regular assessments, tests and Sunday quizzes.'],
+  ['Improve', 'Review progress and focus on areas that need support.'],
+] as const;
+
+const portalFeatures = [
+  { title: 'Homework & Assignments', icon: ClipboardList, tone: 'blue' },
+  { title: 'Test Results & Progress', icon: Award, tone: 'violet' },
+  { title: 'Attendance Tracking', icon: CheckCircle2, tone: 'green' },
+  { title: 'Announcements', icon: MessageCircle, tone: 'gold' },
+  { title: 'Your Learning Journey', icon: GraduationCap, tone: 'cyan' },
+] as const;
+
+const toneStyles = {
+  blue: 'bg-blue-50 text-blue-600 ring-blue-100',
+  cyan: 'bg-cyan-50 text-cyan-600 ring-cyan-100',
+  violet: 'bg-violet-50 text-violet-600 ring-violet-100',
+  gold: 'bg-amber-50 text-amber-600 ring-amber-100',
+  pink: 'bg-pink-50 text-pink-600 ring-pink-100',
+  green: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
+};
+
+const StudentIllustration: React.FC = () => (
+  <div className="relative mx-auto w-full max-w-[540px]">
+    <div className="absolute inset-8 rounded-full bg-blue-100/70 blur-3xl" />
+    <div className="relative rounded-[2.5rem] border border-white/80 bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-4 shadow-[0_30px_90px_-40px_rgba(37,99,235,0.38)] sm:p-7">
+      <img
+        src="/brand/learnova-watermark.svg"
+        alt=""
+        aria-hidden="true"
+        className="absolute -right-5 -top-5 w-32 opacity-[0.12]"
+      />
+      <svg
+        viewBox="0 0 520 410"
+        role="img"
+        aria-label="Illustration of a student studying at a desk"
+        className="relative w-full"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient id="desk" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#2563EB" />
+            <stop offset="1" stopColor="#06B6D4" />
+          </linearGradient>
+          <linearGradient id="shirt" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#818CF8" />
+            <stop offset="1" stopColor="#6366F1" />
+          </linearGradient>
+        </defs>
+        <circle cx="260" cy="205" r="165" fill="#DBEAFE" />
+        <circle cx="380" cy="100" r="24" fill="#FDE68A" />
+        <path d="M92 310c17-89 66-135 145-135s128 46 145 135" fill="#CFFAFE" />
+        <path d="M144 303h253v20H144z" rx="8" fill="url(#desk)" />
+        <path d="M170 324h15v45h-15zm187 0h15v45h-15z" fill="#0B1F4D" />
+        <path d="M200 292c5-48 24-76 57-76s52 28 57 76" fill="url(#shirt)" />
+        <path d="M231 213c0 20 52 20 52 0v-31h-52z" fill="#F2B69E" />
+        <ellipse cx="257" cy="151" rx="49" ry="57" fill="#F6C7A9" />
+        <path d="M209 151c-6-44 15-72 54-72 36 0 53 24 48 61-14-2-26-12-34-27-15 17-39 26-68 25z" fill="#172554" />
+        <path d="M212 147c-2 25 4 43 15 55-15-4-25-20-26-38-1-8 3-14 11-17zm88 0c2 25-4 43-15 55 15-4 25-20 26-38 1-8-3-14-11-17z" fill="#172554" />
+        <circle cx="240" cy="153" r="3" fill="#0B1F4D" />
+        <circle cx="274" cy="153" r="3" fill="#0B1F4D" />
+        <path d="M247 174c6 5 14 5 20 0" fill="none" stroke="#C56D61" strokeLinecap="round" strokeWidth="3" />
+        <path d="M215 260c-22-12-39-29-47-51" fill="none" stroke="#F2B69E" strokeLinecap="round" strokeWidth="13" />
+        <path d="M299 254c14-13 25-28 33-44" fill="none" stroke="#F2B69E" strokeLinecap="round" strokeWidth="13" />
+        <path d="M194 276h91l-9 13h-91z" fill="#F59E0B" />
+        <path d="M193 289h91l-6 7h-91z" fill="#FCD34D" />
+        <path d="M293 268h45v25h-45z" rx="3" fill="#fff" stroke="#BFDBFE" strokeWidth="2" />
+        <path d="M302 276h27m-27 6h19" stroke="#93C5FD" strokeLinecap="round" strokeWidth="3" />
+        <path d="M119 215h32v88h-32z" rx="5" fill="#fff" />
+        <path d="M119 215h32v15h-32z" rx="5" fill="#F59E0B" />
+        <path d="M126 241h18m-18 10h18m-18 10h18" stroke="#CBD5E1" strokeLinecap="round" strokeWidth="3" />
+        <path d="M377 226h27v77h-27z" rx="4" fill="#fff" />
+        <path d="M377 226h27v13h-27z" rx="4" fill="#A78BFA" />
+        <path d="M383 249h15m-15 9h15m-15 9h15" stroke="#CBD5E1" strokeLinecap="round" strokeWidth="3" />
+        <path d="m103 135 6 14 15 2-11 10 3 15-13-8-13 8 3-15-11-10 15-2z" fill="#F59E0B" />
+        <path d="m410 150 4 9 10 1-8 7 2 10-8-5-9 5 2-10-7-7 10-1z" fill="#06B6D4" />
+      </svg>
+
+      <div className="float-slow absolute -left-3 top-14 rounded-2xl bg-white px-4 py-3 shadow-lg shadow-blue-900/10 sm:-left-7 sm:px-5">
+        <div className="flex items-center gap-2 text-sm font-bold text-brand-navy">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          Learn with confidence
+        </div>
+      </div>
+
+      <div className="float-slow absolute -bottom-5 right-2 rounded-2xl border border-slate-100 bg-white p-4 shadow-xl shadow-blue-900/10 sm:right-0">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+          A thoughtful routine
+        </p>
+        {['Understand the concept', 'Practice together', 'Keep improving'].map((item) => (
+          <div key={item} className="flex items-center gap-2 py-1 text-xs font-medium text-slate-700">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 export const LandingPage: React.FC = () => {
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-brand-surface text-brand-text">
-      {/* 1. HERO SECTION */}
-      <section
-        id="hero"
-        className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 pt-16 pb-20 md:pt-24 md:pb-28 border-b border-slate-200"
-      >
-        {/* Subtle decorative watermark placement in background */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/4 pointer-events-none opacity-40">
-          <img
-            src="/brand/learnova-watermark.svg"
-            alt=""
-            className="w-96 h-96 select-none"
-            aria-hidden="true"
-          />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            {/* Mode & Audience Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200/80 mb-6">
-              <span className="w-2 h-2 rounded-full bg-brand-blue animate-pulse"></span>
-              <span className="text-xs font-semibold text-brand-blue uppercase tracking-wider">
-                Offline Tuition • Classes 1–10 • All Subjects
-              </span>
+    <>
+      <section id="hero" className="relative overflow-hidden bg-gradient-to-b from-white via-white to-blue-50/70">
+        <div className="pointer-events-none absolute -left-40 top-20 h-80 w-80 rounded-full bg-cyan-100/40 blur-3xl" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:gap-10 lg:px-8 lg:py-24">
+          <div className="relative z-10">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wider text-brand-blue shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-brand-cyan" />
+              Offline Tuition <span className="text-slate-300">/</span> Classes 1–10
+              <span className="text-slate-300">/</span> CBSE &amp; UP Board curricula
             </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-navy tracking-tight leading-[1.15] mb-6">
-              Concept-based learning with genuine{' '}
-              <span className="text-brand-blue">personal attention</span>.
+            <h1 className="max-w-2xl text-4xl font-extrabold leading-[1.12] tracking-tight text-brand-navy sm:text-5xl lg:text-[3.6rem]">
+              Concept-Based Learning.
+              <span className="block text-brand-blue">Personal Attention.</span>
+              Better Results.
             </h1>
-
-            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed mb-8 max-w-2xl">
-              Learnova provides structured offline tuition for school students across Classes 1 to 10. We focus on strong fundamentals, regular assessment, and active guidance for students who need extra support.
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+              Learnova provides structured offline tuition for students across Classes 1 to 10, covering CBSE and UP Board curricula. We focus on strong fundamentals, regular assessments, individual guidance and consistent academic improvement.
             </p>
-
-            {/* Main CTAs */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => setIsEnquiryOpen(true)}
-                className="inline-flex items-center gap-2 px-6 py-3.5 text-base font-semibold text-white bg-brand-blue hover:bg-brand-blueHover rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-blue px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                <span>Enquire About Tuition</span>
-                <ArrowRight className="w-4 h-4" />
+                Enquire About Tuition <ArrowRight className="h-4 w-4" />
               </button>
-
               <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-6 py-3.5 text-base font-semibold text-brand-navy bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-all shadow-xs"
+                to="/student/login"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-brand-navy shadow-sm transition hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                <GraduationCap className="w-5 h-5 text-brand-blue" />
-                <span>Student Login</span>
+                <GraduationCap className="h-5 w-5 text-brand-blue" />
+                Student Login
               </Link>
             </div>
-
-            {/* Quick highlights */}
-            <div className="mt-12 pt-8 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-3 gap-6">
-              <div>
-                <div className="text-2xl font-bold text-brand-navy">Classes 1–10</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium">All school subjects covered</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-brand-blue">Offline Batches</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium">Direct in-person mentoring</div>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <div className="text-2xl font-bold text-brand-cyan">Small Batches</div>
-                <div className="text-xs sm:text-sm text-slate-500 font-medium">Individual student tracking</div>
-              </div>
+            <div className="mt-11 grid grid-cols-1 gap-5 border-t border-slate-200/80 pt-7 sm:grid-cols-3">
+              {[
+                ['Classes 1–10', 'CBSE & UP Board curricula covered'],
+                ['Offline Personal Teaching', 'Direct in-person mentoring'],
+                ['Small Batch Learning', 'Individual student attention'],
+              ].map(([title, detail]) => (
+                <div key={title} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-brand-blue">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold leading-5 text-brand-navy">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+          <StudentIllustration />
         </div>
       </section>
 
-      {/* 2. TEACHING APPROACH SECTION */}
-      <section id="about" className="py-20 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-xs font-bold text-brand-blue uppercase tracking-widest mb-2">
-              Our Methodology
+      <section id="about" className="bg-white py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-12 max-w-2xl text-center sm:mb-14">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">Why Learnova?</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+              A Complete Learning Support for Your Child
             </h2>
-            <h3 className="text-3xl font-bold text-brand-navy tracking-tight sm:text-4xl">
-              How we help students build confidence
-            </h3>
-            <p className="mt-4 text-base text-slate-600">
-              Education should not be about rote memorization. Our classroom rhythm is designed to make fundamentals intuitive and repeatable.
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              A caring, consistent approach that helps students understand more and feel ready to keep learning.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Card 1 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-blue-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-blue-100/80 text-brand-blue flex items-center justify-center mb-5">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Concept-First Understanding
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                We break complex topics into relatable steps so students understand the logic behind formulas, rules, and problem-solving techniques before solving exercises.
-              </p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-cyan-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-cyan-100/80 text-brand-cyan flex items-center justify-center mb-5">
-                <Users className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Personalized Attention
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Every child absorbs concepts at their own pace. Small offline batches allow direct interaction, doubt resolution, and tailored explanations.
-              </p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-gold-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 text-brand-gold flex items-center justify-center mb-5">
-                <HelpCircle className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Dedicated Extra Support
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Students needing reinforcement receive supplementary guidance and revision sessions to strengthen foundational gaps without feeling rushed.
-              </p>
-            </div>
-
-            {/* Card 4 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-blue-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-blue-100/80 text-brand-blue flex items-center justify-center mb-5">
-                <ClipboardList className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Homework & Practice Monitoring
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Daily school homework and tuition assignments are tracked methodically, building consistent study discipline and self-reliance.
-              </p>
-            </div>
-
-            {/* Card 5 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-cyan-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-cyan-100/80 text-brand-cyan flex items-center justify-center mb-5">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Regular Tests & Sunday Quizzes
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Periodic chapter assessments and Sunday review quizzes measure understanding under timed conditions, reducing exam anxiety.
-              </p>
-            </div>
-
-            {/* Card 6 */}
-            <div className="bg-brand-surface rounded-2xl p-7 border border-slate-200 hover:border-amber-200 transition-colors">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 text-brand-gold flex items-center justify-center mb-5">
-                <BarChart3 className="w-6 h-6" />
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Structured Feedback
-              </h4>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Constructive feedback pinpoints exact areas needing review, helping students recognize their progress and improve step by step.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. ACADEMIC TRACKING PREVIEW (Clearly identified as platform preview) */}
-      <section id="features" className="py-20 bg-brand-surface border-b border-slate-200 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-12">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-semibold mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-brand-blue" />
-              <span>Technology in Development • Platform Preview</span>
-            </div>
-            <h2 className="text-3xl font-bold text-brand-navy tracking-tight sm:text-4xl">
-              Academic Tracking Platform
-            </h2>
-            <p className="mt-4 text-base text-slate-600">
-              We are building a clean digital companion for our tuition center. Below is an authentic preview of the tracking capabilities being introduced to simplify record-keeping for parents, students, and tutors.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Feature 1 */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-brand-blue flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                    Preview
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-brand-navy mb-2">
-                  Attendance Tracking
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Daily presence and absence log to ensure students maintain consistent attendance throughout the school term.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                Log mode: In-person session logs
-              </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-cyan-50 text-brand-cyan flex items-center justify-center">
-                    <ClipboardList className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                    Preview
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-brand-navy mb-2">
-                  Homework Status
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Transparent record of completed, pending, or reviewed homework assignments across subjects.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                Track mode: Daily verification
-              </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-amber-50 text-brand-gold flex items-center justify-center">
-                    <Award className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                    Preview
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-brand-navy mb-2">
-                  Test Results & Quizzes
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Chapter marks, score breakdowns, and question reviews for both regular offline tests and Sunday quizzes.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                Data mode: Recorded score sheets
-              </div>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-brand-blue flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                    Preview
-                  </span>
-                </div>
-                <h4 className="text-base font-bold text-brand-navy mb-2">
-                  Progress Summaries
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Periodic summary reports highlighting growth trends, consistent subject performance, and suggested practice topics.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-500">
-                Report mode: Quarterly & Monthly review
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive preview note */}
-          <div className="mt-8 bg-blue-50/70 border border-blue-200/80 rounded-xl p-4 flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-brand-blue shrink-0" />
-              <p className="text-xs sm:text-sm text-brand-navy font-medium">
-                Want to explore the UI architecture? Test the role-specific dashboard views.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                to="/login"
-                className="text-xs font-semibold text-brand-blue hover:text-brand-blueHover underline"
-              >
-                Access Portal Prototype &rarr;
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. PARENT PARTNERSHIP SECTION */}
-      <section className="py-20 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7">
-              <h2 className="text-xs font-bold text-brand-blue uppercase tracking-widest mb-2">
-                Parent Partnership
-              </h2>
-              <h3 className="text-3xl font-bold text-brand-navy tracking-tight sm:text-4xl mb-6">
-                Active transparency without guesswork
-              </h3>
-              <p className="text-base text-slate-600 leading-relaxed mb-6">
-                Parents play an indispensable role in a child's academic development. At Learnova, we maintain an open feedback loop through regular progress reviews, attendance alerts, and direct discussions on strengths and areas needing attention.
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-brand-navy">
-                      Timely Progress Communication
-                    </h4>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Regular updates after monthly tests so parents know exactly where the student stands before school exams.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-brand-navy">
-                      Homework Accountability
-                    </h4>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Clarity on whether regular home practice tasks are being completed conscientiously.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-brand-navy">
-                      Direct Educator Consultation
-                    </h4>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Scheduled discussions to align on exam preparation and personalized study strategies.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 bg-brand-surface p-8 rounded-3xl border border-slate-200">
-              <div className="border-l-4 border-brand-cyan pl-4 mb-6">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Tuition Philosophy
-                </span>
-                <p className="text-sm text-brand-navy font-medium mt-1 italic">
-                  "Consistent small efforts, monitored every week, create sustainable academic confidence."
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl p-5 border border-slate-200 space-y-3">
-                <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                  Typical Academic Cycle
-                </div>
-                <div className="text-xs text-slate-600 flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="font-medium text-brand-navy">Mon – Fri</span>
-                  <span>Concept teaching & homework review</span>
-                </div>
-                <div className="text-xs text-slate-600 flex items-center justify-between py-1.5 border-b border-slate-100">
-                  <span className="font-medium text-brand-navy">Weekend / Sunday</span>
-                  <span>Review quiz & revision for key topics</span>
-                </div>
-                <div className="text-xs text-slate-600 flex items-center justify-between py-1.5">
-                  <span className="font-medium text-brand-navy">Month-end</span>
-                  <span>Evaluation summary for parents</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. FOUNDER SECTION (Verified info only, no fictitious claims) */}
-      <section id="founder" className="py-20 bg-brand-surface border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 shadow-xs relative overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              {/* Founder Avatar / Mark */}
-              <div className="md:col-span-4 flex flex-col items-center text-center">
-                <div className="w-28 h-28 rounded-2xl bg-brand-navy flex items-center justify-center p-4 shadow-md mb-4 border-2 border-brand-blue/30">
-                  <img
-                    src="/brand/learnova-mark.svg"
-                    alt="Learnova Icon"
-                    className="w-16 h-16"
-                  />
-                </div>
-                <h3 className="text-xl font-bold text-brand-navy">
-                  {BRAND_CONFIG.founder.name}
-                </h3>
-                <p className="text-xs font-semibold text-brand-blue uppercase tracking-wider mt-1">
-                  Founder & Offline Tutor
-                </p>
-                <div className="mt-4">
-                  <a
-                    href={BRAND_CONFIG.founder.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-blue hover:text-brand-blueHover bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 transition-colors"
-                  >
-                    <span>LinkedIn Profile</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Founder Details */}
-              <div className="md:col-span-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-4">
-                  <span>Verified Educator Profile</span>
-                </div>
-                <h4 className="text-2xl font-bold text-brand-navy tracking-tight mb-4">
-                  Dedicated in-person guidance for foundational classes
-                </h4>
-                <div className="space-y-3 text-sm text-slate-600 leading-relaxed">
-                  <p>
-                    Himanshu Shrivastava brings <strong>2 years of teaching experience</strong> conducting offline tuition for students from <strong>Class 1 to Class 10</strong> across all core school subjects.
-                  </p>
-                  <p>
-                    With an emphasis on conceptual clarity rather than rote recall, his teaching methodology ensures students build lasting comprehension, regular study habits, and analytical problem-solving skills.
-                  </p>
-                  <p>
-                    Learnova was created to combine high-touch in-person classroom teaching with clean, dependable operational tools for academic follow-up.
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-xs text-slate-500 uppercase font-semibold">Teaching Scope</span>
-                    <p className="text-sm font-bold text-brand-navy">{BRAND_CONFIG.founder.scope}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500 uppercase font-semibold">Tuition Format</span>
-                    <p className="text-sm font-bold text-brand-navy">{BRAND_CONFIG.founder.mode}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. FUTURE PLATFORM FEATURES (Honestly presented SaaS roadmap) */}
-      <section id="future-saas" className="py-20 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
-              <Layers className="w-3.5 h-3.5 text-brand-navy" />
-              <span>Future Roadmap • EdTech Vision</span>
-            </div>
-            <h2 className="text-3xl font-bold text-brand-navy tracking-tight sm:text-4xl">
-              Future Platform for Tutors and Coaching Institutes
-            </h2>
-            <p className="mt-4 text-base text-slate-600">
-              Our long-term goal is to mature our internal tuition management platform into an easy-to-use SaaS product for independent tutors and small coaching centres. These capabilities are currently in active design and engineering.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-brand-surface rounded-2xl p-6 border border-slate-200">
-              <div className="text-xs font-semibold text-brand-blue uppercase tracking-wider mb-2">
-                Planned Phase 1
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Batch & Class Management
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Centralized timetable, student enrollments, subject mappings, and batch schedule management for solo educators.
-              </p>
-              <div className="mt-6 text-[11px] font-semibold text-slate-400 uppercase">
-                Status: In Prototype Architecture
-              </div>
-            </div>
-
-            <div className="bg-brand-surface rounded-2xl p-6 border border-slate-200">
-              <div className="text-xs font-semibold text-brand-cyan uppercase tracking-wider mb-2">
-                Planned Phase 2
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Multi-Tutor & Center Workspaces
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Permissions and class allocations for coaching centres with multiple instructors teaching different subjects.
-              </p>
-              <div className="mt-6 text-[11px] font-semibold text-slate-400 uppercase">
-                Status: Architecture Planning
-              </div>
-            </div>
-
-            <div className="bg-brand-surface rounded-2xl p-6 border border-slate-200">
-              <div className="text-xs font-semibold text-brand-gold uppercase tracking-wider mb-2">
-                Planned Phase 3
-              </div>
-              <h4 className="text-lg font-bold text-brand-navy mb-2">
-                Guardian Communication Hub
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Automated monthly attendance and quiz reports delivered securely via email or messaging channels.
-              </p>
-              <div className="mt-6 text-[11px] font-semibold text-slate-400 uppercase">
-                Status: Roadmap Item
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. CONTACT & ENQUIRY SECTION (Configurable, no invented contact details) */}
-      <section id="contact" className="py-20 bg-brand-surface">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-xs font-bold text-brand-blue uppercase tracking-widest mb-2">
-                Get In Touch
-              </h2>
-              <h3 className="text-3xl font-bold text-brand-navy tracking-tight sm:text-4xl">
-                Enquire for tuition admissions
-              </h3>
-              <p className="mt-4 text-base text-slate-600">
-                Contact us to check current offline batch timings, seat availability, and subject schedules for Classes 1 to 10.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-3xl p-8 sm:p-10 border border-slate-200 shadow-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8 pb-8 border-b border-slate-100">
-                {/* Direct Phone / Call */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-lg bg-blue-100 text-brand-blue flex items-center justify-center">
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-brand-navy uppercase">
-                        Phone Enquiries
-                      </div>
-                      <div className="text-sm font-semibold text-slate-700">
-                        {BRAND_CONFIG.contact.phoneDisplay}
-                      </div>
-                    </div>
-                  </div>
-                  {BRAND_CONFIG.contact.phoneRaw ? (
-                    <a
-                      href={`tel:${BRAND_CONFIG.contact.phoneRaw}`}
-                      className="text-xs font-semibold text-brand-blue hover:underline"
-                    >
-                      Call for admissions &rarr;
-                    </a>
-                  ) : (
-                    <span className="text-[11px] text-slate-400">
-                      (Configurable via environment placeholder)
-                    </span>
-                  )}
-                </div>
-
-                {/* WhatsApp Enquiry */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                      <MessageCircle className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-brand-navy uppercase">
-                        WhatsApp Message
-                      </div>
-                      <div className="text-sm font-semibold text-slate-700">
-                        Direct messaging
-                      </div>
-                    </div>
-                  </div>
-                  {BRAND_CONFIG.contact.whatsappRaw ? (
-                    <a
-                      href={`https://wa.me/${BRAND_CONFIG.contact.whatsappRaw}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-emerald-600 hover:underline"
-                    >
-                      Chat on WhatsApp &rarr;
-                    </a>
-                  ) : (
-                    <span className="text-[11px] text-slate-400">
-                      (Configurable via environment placeholder)
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Trigger Online Form */}
-              <div className="text-center">
-                <p className="text-sm text-slate-600 mb-4">
-                  Prefer leaving your contact details? Fill out our quick admission enquiry form.
-                </p>
-                <button
-                  onClick={() => setIsEnquiryOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 text-sm font-bold text-white bg-brand-navy hover:bg-brand-navyLight rounded-xl transition-all shadow-sm"
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {benefits.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <article
+                  key={benefit.title}
+                  className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_-20px_rgba(15,23,42,0.25)] transition duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-lg"
                 >
-                  <span>Open Tuition Enquiry Form</span>
-                  <ArrowRight className="w-4 h-4 text-brand-cyan" />
-                </button>
+                  <span className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ${toneStyles[benefit.tone]}`}>
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="text-lg font-bold text-brand-navy">{benefit.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{benefit.description}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="methodology" className="overflow-hidden bg-blue-50/60 py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">Our Teaching Methodology</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+              A Simple & Effective Learning Journey
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              Offline tuition for Classes 1–10, supporting CBSE and UP Board curricula through consistent teaching, practice and review.
+            </p>
+          </div>
+          <div className="relative grid gap-5 md:grid-cols-5 md:gap-3">
+            <div className="absolute left-7 top-8 bottom-8 w-px bg-blue-200 md:left-[10%] md:right-[10%] md:top-8 md:bottom-auto md:h-px md:w-auto" />
+            {learningSteps.map(([title, description], index) => (
+              <article key={title} className="relative flex gap-4 rounded-2xl bg-white p-5 shadow-sm md:flex-col md:items-center md:bg-transparent md:p-3 md:text-center md:shadow-none">
+                <span className="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-4 border-blue-50 bg-brand-blue text-lg font-extrabold text-white shadow-md shadow-blue-600/20">
+                  {index + 1}
+                </span>
+                <div className="pt-1 md:pt-2">
+                  <h3 className="text-lg font-bold text-brand-navy">{title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="bg-white py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-700">
+                <Sparkles className="h-4 w-4" /> Your student portal
+              </div>
+              <h2 className="max-w-xl text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+                Track, Learn and Grow with Learnova
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+                A simple and student-friendly portal to stay organized, track progress and manage learning.
+              </p>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {portalFeatures.map((feature) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div key={feature.title} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ${toneStyles[feature.tone]}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm font-semibold text-slate-700">{feature.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <Link
+                to="/student/login"
+                className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-brand-blue transition hover:gap-3"
+              >
+                Visit Student Login <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mx-auto w-full max-w-[570px] rounded-[1.75rem] bg-gradient-to-br from-blue-100 via-indigo-50 to-cyan-100 p-4 shadow-inner sm:p-7">
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-blue-900/10">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+                  <span className="ml-3 text-[11px] font-medium text-slate-400">Learnova Student Portal</span>
+                </div>
+                <div className="grid min-h-[270px] grid-cols-[52px_1fr] sm:grid-cols-[145px_1fr]">
+                  <aside className="space-y-4 bg-brand-navy p-3 sm:p-4">
+                    <img src="/brand/learnova-mark.svg" alt="" className="mx-auto h-8 w-8" />
+                    <div className="space-y-3 pt-4">
+                      {['Overview', 'Homework', 'Progress', 'Attendance'].map((item, index) => (
+                        <div key={item} className={`h-7 rounded-lg ${index === 0 ? 'bg-white/15' : 'bg-white/[0.06]'}`}>
+                          <span className="sr-only">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
+                  <div className="p-4 sm:p-6">
+                    <p className="text-xs font-medium text-slate-400">Your learning space</p>
+                    <h3 className="mt-1 text-lg font-bold text-brand-navy">Learning overview</h3>
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      {[
+                        ['Homework & Assignments', 'bg-blue-50'],
+                        ['Test Results & Progress', 'bg-violet-50'],
+                        ['Attendance Tracking', 'bg-emerald-50'],
+                        ['Announcements', 'bg-amber-50'],
+                      ].map(([label, color]) => (
+                        <div key={label} className={`min-h-[72px] rounded-xl border border-slate-100 ${color} p-3`}>
+                          <div className="mb-3 h-2 w-2/3 rounded-full bg-slate-300/70" />
+                          <p className="text-[10px] font-semibold leading-4 text-slate-600 sm:text-xs">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 rounded-xl border border-dashed border-blue-200 bg-blue-50/50 p-3">
+                      <p className="text-[10px] font-bold text-brand-navy sm:text-xs">Your Learning Journey</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {['Understand', 'Practice', 'Review'].map((step) => (
+                          <span key={step} className="rounded-full bg-white px-2 py-1 text-[9px] font-medium text-slate-500">
+                            {step}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mx-auto h-3 w-[72%] rounded-b-xl bg-slate-300 shadow-sm" />
+              <div className="mx-auto h-2 w-[82%] rounded-b-full bg-slate-200" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="founder" className="relative overflow-hidden bg-blue-50/50 py-20 sm:py-24">
+        <img
+          src="/brand/learnova-watermark.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-20 top-8 w-80 opacity-[0.08]"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-10 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">The person behind Learnova</p>
+            <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-navy sm:text-4xl">
+              Teaching with care, clarity and personal attention
+            </h2>
+          </div>
+          <div className="overflow-hidden rounded-3xl border border-white bg-white shadow-[0_24px_80px_-45px_rgba(15,23,42,0.4)]">
+            <div className="grid lg:grid-cols-[0.78fr_1.5fr]">
+              <div className="flex flex-col items-center justify-center bg-gradient-to-br from-brand-navy via-blue-900 to-indigo-900 px-7 py-10 text-center text-white sm:px-10">
+                <div className="flex h-40 w-40 items-center justify-center rounded-full border border-white/20 bg-white/10 shadow-inner">
+                  <UserRound className="h-20 w-20 text-blue-100" strokeWidth={1.2} aria-hidden="true" />
+                </div>
+                <p className="mt-6 text-xl font-bold">{BRAND_CONFIG.founder.name}</p>
+                <p className="mt-1 text-sm text-blue-100">Founder &amp; Educator, Learnova</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-2">
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold">2+ Years Experience</span>
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold">Classes 1–10</span>
+                  <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold">CBSE &amp; UP Board curricula</span>
+                </div>
+                <a
+                  href={BRAND_CONFIG.founder.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/25 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-900"
+                >
+                  LinkedIn Profile <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <p className="mt-4 text-[11px] text-blue-200">Portrait placeholder</p>
+              </div>
+              <div className="p-7 sm:p-10 lg:p-12">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-blue">A personal introduction</p>
+                <h3 className="mt-3 text-2xl font-extrabold leading-tight text-brand-navy sm:text-3xl">
+                  Hello, I’m {BRAND_CONFIG.founder.name}.
+                </h3>
+                <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600 sm:text-base">
+                  <p>
+                    I’m the Founder and Educator at Learnova. With over 2 years of teaching experience, I provide offline tuition for students from Class 1 to Class 10, covering both CBSE and UP Board curricula.
+                  </p>
+                  <p>
+                    My teaching approach focuses on concept-based learning, personal attention, regular assessments and identifying areas where each student needs improvement.
+                  </p>
+                  <p>
+                    I believe every student learns differently. My goal is to make learning easier, strengthen academic fundamentals and help students become more confident and independent learners.
+                  </p>
+                </div>
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <h4 className="text-sm font-bold text-brand-navy">What guides my teaching</h4>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {[
+                      'Concept clarity over memorization',
+                      'Attention to individual learning needs',
+                      'Extra guidance when students need support',
+                      'Regular tests and Sunday quizzes',
+                      'Consistent homework monitoring',
+                      'Keeping parents informed about progress',
+                    ].map((priority) => (
+                      <div key={priority} className="flex items-start gap-2.5 text-sm leading-5 text-slate-600">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan" />
+                        {priority}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enquiry Modal */}
-      <EnquiryModal
-        isOpen={isEnquiryOpen}
-        onClose={() => setIsEnquiryOpen(false)}
-      />
-    </div>
+      <section id="contact" className="relative overflow-hidden bg-brand-navy py-16 sm:py-20">
+        <img src="/brand/learnova-watermark.svg" alt="" aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 w-80 opacity-[0.08]" />
+        <div className="relative mx-auto flex max-w-5xl flex-col items-center px-4 text-center sm:px-6 lg:px-8">
+          <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-cyan-300">
+            <Sparkles className="h-6 w-6" />
+          </span>
+          <h2 className="max-w-3xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            Give Your Child the Right Learning Environment.
+          </h2>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-blue-100">
+            Help your child build strong fundamentals with personal attention and structured learning.
+          </p>
+          <button
+            onClick={() => setIsEnquiryOpen(true)}
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-brand-navy shadow-lg transition hover:-translate-y-0.5 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-navy"
+          >
+            Enquire About Tuition <ArrowRight className="h-4 w-4 text-brand-blue" />
+          </button>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <a href={`tel:${BRAND_CONFIG.contact.phoneRaw}`} className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10">
+              <PhoneCall className="h-4 w-4" />Call {BRAND_CONFIG.contact.phoneDisplay}
+            </a>
+            <a href={`https://wa.me/${BRAND_CONFIG.contact.whatsappRaw}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/50 px-4 py-2.5 text-sm font-bold text-emerald-100 transition hover:bg-white/10">
+              <MessageCircle className="h-4 w-4" />WhatsApp
+            </a>
+          </div>
+          <div className="mt-5 flex items-center gap-2 text-xs text-blue-100">
+            <CheckCircle2 className="h-4 w-4 text-cyan-300" />
+            Offline tuition for Classes 1–10
+          </div>
+        </div>
+      </section>
+
+      <EnquiryModal isOpen={isEnquiryOpen} onClose={() => setIsEnquiryOpen(false)} />
+    </>
   );
 };
-

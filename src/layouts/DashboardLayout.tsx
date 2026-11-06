@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Users,
@@ -19,6 +19,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { UserRole } from '../types';
+import { apiRequest } from '../lib/api';
 
 interface NavItem {
   name: string;
@@ -41,8 +42,28 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadEnquiries, setUnreadEnquiries] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (role !== 'admin') return;
+    let active = true;
+    const refreshUnread = async () => {
+      try {
+        const response = await apiRequest<{ data: { unread: number } }>('/enquiries/stats');
+        if (active) setUnreadEnquiries(response.data.unread);
+      } catch (error) {
+        console.error('Unable to refresh unread enquiry count:', error);
+      }
+    };
+    void refreshUnread();
+    const timer = window.setInterval(() => void refreshUnread(), 30000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [role]);
 
   // Navigation items based on role specifications
   const getNavItems = (): NavItem[] => {
@@ -53,6 +74,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         { name: 'Classes & Subjects', href: '/admin', tabKey: 'classes', icon: BookOpen },
         { name: 'Daily Attendance', href: '/admin', tabKey: 'attendance', icon: Calendar },
         { name: 'Homework Tracker', href: '/admin', tabKey: 'homework', icon: ClipboardList },
+        { name: 'Enquiries', href: '/admin', tabKey: 'enquiries', icon: Bell },
         { name: 'Sunday Quizzes', href: '/admin', tabKey: 'quizzes', icon: Award },
         { name: 'Marks & Reports', href: '/admin', tabKey: 'reports', icon: BarChart3 },
         { name: 'Announcements & Settings', href: '/admin', tabKey: 'settings', icon: Settings },
@@ -175,7 +197,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                <span>{item.name}</span>
+                <span className="flex-1 text-left">{item.name}</span>
+                {item.tabKey === 'enquiries' && unreadEnquiries > 0 && (
+                  <span aria-label={`${unreadEnquiries} unread enquiries`} className="min-w-5 rounded-full bg-amber-400 px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-4 text-brand-navy">
+                    {unreadEnquiries > 99 ? '99+' : unreadEnquiries}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -279,4 +306,3 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     </div>
   );
 };
-

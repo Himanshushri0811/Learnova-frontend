@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   Award,
@@ -7,6 +7,8 @@ import {
   CalendarDays,
   CalendarRange,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ClipboardCheck,
   ClipboardList,
   Clock3,
@@ -24,6 +26,8 @@ import {
 } from 'lucide-react';
 import { apiRequest } from '../../lib/api';
 import { StudentMode, StudentPortalLayout } from '../../layouts/StudentPortalLayout';
+import { MySubjectsPanel } from '../../components/dashboards/MySubjectsPanel';
+import { MyHomeworkPanel } from '../../components/dashboards/MyHomeworkPanel';
 import './StudentDashboard.css';
 
 type DashboardTab =
@@ -74,6 +78,14 @@ interface AttendanceSummary {
   percentage: number;
 }
 
+interface Holiday {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+}
+
 interface StudentFee {
   _id: string;
   academicMonth: string;
@@ -102,6 +114,10 @@ interface AttendanceResponse {
   };
 }
 
+interface HolidayResponse {
+  data: { holidays: Holiday[] };
+}
+
 interface FeesResponse {
   data: { fees: StudentFee[] };
 }
@@ -114,6 +130,14 @@ interface LearningSection {
   emptyTitle: string;
   emptyMessage: string;
 }
+
+const getIndiaDate = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
 
 const learningSections: LearningSection[] = [
   {
@@ -324,6 +348,11 @@ export const StudentDashboard: React.FC = () => {
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [attendance, setAttendance] = useState<AttendanceSummary | null>(null);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [attendanceMonth, setAttendanceMonth] = useState(() => getIndiaDate().slice(0, 7));
+  const [selectedAttendanceDate, setSelectedAttendanceDate] = useState(getIndiaDate);
+  const [attendanceHolidays, setAttendanceHolidays] = useState<Holiday[]>([]);
+  const [attendanceCalendarLoading, setAttendanceCalendarLoading] = useState(false);
+  const [attendanceCalendarError, setAttendanceCalendarError] = useState('');
   const [fees, setFees] = useState<StudentFee[]>([]);
   const [profileDraft, setProfileDraft] = useState<StudentProfileFields | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -382,6 +411,29 @@ export const StudentDashboard: React.FC = () => {
     };
   }, []);
 
+  const loadAttendanceCalendar = useCallback(async () => {
+    setAttendanceCalendarLoading(true);
+    setAttendanceCalendarError('');
+    try {
+      const [attendanceResponse, holidayResponse] = await Promise.all([
+        apiRequest<AttendanceResponse>(`/attendance/my-attendance?month=${attendanceMonth}`),
+        apiRequest<HolidayResponse>(`/attendance/my-holidays?month=${attendanceMonth}`),
+      ]);
+      setAttendance(attendanceResponse.data.summary);
+      setAttendanceRecords(attendanceResponse.data.records);
+      setAttendanceHolidays(holidayResponse.data.holidays);
+      setAttendanceError('');
+    } catch (error) {
+      setAttendanceCalendarError(errorMessage(error, 'Unable to load your attendance calendar.'));
+    } finally {
+      setAttendanceCalendarLoading(false);
+    }
+  }, [attendanceMonth]);
+
+  useEffect(() => {
+    if (activeTab === 'attendance') void loadAttendanceCalendar();
+  }, [activeTab, loadAttendanceCalendar]);
+
   useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(null), 4200);
@@ -403,6 +455,44 @@ export const StudentDashboard: React.FC = () => {
   const profileCompletion = Math.round(
     (profileFields.filter((field) => Boolean(field?.trim())).length / profileFields.length) * 100,
   );
+  const attendanceCalendarDays = useMemo(() => {
+    const [yearText, monthText] = attendanceMonth.split('-');
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const dayCount = new Date(year, month, 0).getDate();
+    const mondayFirstOffset = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+    return [
+      ...Array.from({ length: mondayFirstOffset }, (_, index) => ({
+        key: `empty-${index}`,
+        date: '',
+        day: 0,
+      })),
+      ...Array.from({ length: dayCount }, (_, index) => {
+        const day = index + 1;
+        return {
+          key: `${attendanceMonth}-${String(day).padStart(2, '0')}`,
+          date: `${attendanceMonth}-${String(day).padStart(2, '0')}`,
+          day,
+        };
+      }),
+    ];
+  }, [attendanceMonth]);
+  const selectedAttendanceRecord = attendanceRecords.find(
+    (record) => record.date === selectedAttendanceDate
+  );
+  const selectedAttendanceHoliday = attendanceHolidays.find(
+    (holiday) =>
+      selectedAttendanceDate >= holiday.startDate &&
+      selectedAttendanceDate <= holiday.endDate
+  );
+
+  const moveAttendanceMonth = (offset: number) => {
+    const [year, month] = attendanceMonth.split('-').map(Number);
+    const next = new Date(year, month - 1 + offset, 1);
+    const monthValue = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`;
+    setAttendanceMonth(monthValue);
+    setSelectedAttendanceDate(`${monthValue}-01`);
+  };
 
   const selectTab = (tab: string) => {
     if ([
@@ -724,39 +814,217 @@ export const StudentDashboard: React.FC = () => {
       )}
 
       {activeTab === 'attendance' && (
-        <section>
-          <SectionHeading eyebrow="Your records" title="My attendance" description="A clear view of the attendance records saved for your account." icon={CheckCircle2} />
-          {attendanceError ? (
-            <ErrorPanel message={attendanceError} onRetry={() => window.location.reload()} />
-          ) : attendanceLoading ? (
-            <div className="grid gap-3 sm:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <LoadingCard key={index} />)}</div>
-          ) : attendanceRecords.length ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <SummaryCard label="Attendance" value={`${attendance?.percentage ?? 0}%`} icon={BarChart3} tint="blue" />
-                <SummaryCard label="Sessions" value={attendance?.total ?? 0} icon={CalendarDays} tint="violet" />
-                <SummaryCard label="Present" value={attendance?.present ?? 0} icon={CheckCircle2} tint="green" />
-                <SummaryCard label="Absent" value={attendance?.absent ?? 0} icon={Clock3} tint="amber" />
-              </div>
-              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-100 px-5 py-4">
-                  <h3 className="font-extrabold text-[#0b1f4d]">Attendance history</h3>
-                </div>
-                <ul className="divide-y divide-slate-100">
-                  {attendanceRecords.map((record) => (
-                    <li key={record._id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">{formatDate(record.date)}</p>
-                        {record.remarks && <p className="mt-1 text-xs text-slate-500">{record.remarks}</p>}
-                      </div>
-                      <StatusPill value={record.status} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        <section className="space-y-5">
+          <SectionHeading
+            eyebrow="Your records"
+            title="My Attendance"
+            description="Check your monthly attendance and view holidays. Your records are read-only."
+            icon={CheckCircle2}
+          />
+          {attendanceCalendarError && (
+            <ErrorPanel message={attendanceCalendarError} onRetry={() => void loadAttendanceCalendar()} />
+          )}
+          {attendanceCalendarLoading ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {Array.from({ length: 5 }, (_, index) => <LoadingCard key={index} />)}
             </div>
           ) : (
-            <EmptyState icon={CalendarDays} title="Your attendance story starts here" message="There are no attendance records saved for your account yet." />
+            <>
+              {attendance?.total ? (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                  <SummaryCard label="Marked working days" value={attendance.total} icon={CalendarDays} tint="violet" />
+                  <SummaryCard label="Present days" value={attendance.present} icon={CheckCircle2} tint="green" />
+                  <SummaryCard label="Absent days" value={attendance.absent} icon={Clock3} tint="amber" />
+                  <SummaryCard label="Leave days" value={attendance.leave} icon={CalendarRange} tint="blue" />
+                  <SummaryCard label="Attendance" value={`${attendance.percentage}%`} icon={BarChart3} tint="blue" />
+                </div>
+              ) : (
+                <EmptyState
+                  icon={CalendarDays}
+                  title="Your attendance story starts here"
+                  message="There are no attendance records saved for your account yet. Your calendar will update when attendance is recorded."
+                />
+              )}
+
+              <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">Monthly calendar</p>
+                    <h3 className="mt-1 text-xl font-extrabold text-[#0b1f4d]">
+                      {new Date(
+                        Number(attendanceMonth.slice(0, 4)),
+                        Number(attendanceMonth.slice(5, 7)) - 1,
+                        1
+                      ).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => moveAttendanceMonth(-1)}
+                      aria-label="Previous month"
+                      className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveAttendanceMonth(1)}
+                      aria-label="Next month"
+                      className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void loadAttendanceCalendar()}
+                      className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-600">
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-emerald-500" />Present</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-rose-500" />Absent</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-amber-400" />Leave</span>
+                  <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-slate-400" />Holiday</span>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div key={day} className="py-2 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:text-xs">
+                      {day}
+                    </div>
+                  ))}
+                  {attendanceCalendarDays.map((item) => {
+                    if (!item.date) return <div key={item.key} aria-hidden="true" />;
+                    const holiday = attendanceHolidays.find(
+                      (entry) => item.date >= entry.startDate && item.date <= entry.endDate
+                    );
+                    const record = attendanceRecords.find((entry) => entry.date === item.date);
+                    const markerClass = holiday
+                      ? 'bg-slate-200 text-slate-600'
+                      : record?.status === 'present'
+                        ? 'bg-emerald-500 text-white'
+                        : record?.status === 'absent'
+                          ? 'bg-rose-500 text-white'
+                          : record?.status === 'leave'
+                            ? 'bg-amber-300 text-amber-950'
+                            : 'bg-slate-50 text-slate-700 hover:bg-blue-50';
+                    const dateLabel = holiday
+                      ? `Holiday: ${holiday.name}`
+                      : record
+                        ? record.status[0].toUpperCase() + record.status.slice(1)
+                        : 'No attendance recorded';
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setSelectedAttendanceDate(item.date)}
+                        aria-pressed={selectedAttendanceDate === item.date}
+                        aria-label={`${item.date}, ${dateLabel}`}
+                        title={`${item.date}: ${dateLabel}`}
+                        className={`relative flex min-h-11 items-center justify-center rounded-xl text-sm font-bold transition sm:min-h-12 ${markerClass} ${
+                          selectedAttendanceDate === item.date
+                            ? 'ring-2 ring-blue-700 ring-offset-2'
+                            : ''
+                        }`}
+                      >
+                        {item.day}
+                        {(holiday || record) && (
+                          <span className={`absolute bottom-1 h-1 w-1 rounded-full ${
+                            holiday
+                              ? 'bg-slate-500'
+                              : record?.status === 'present'
+                                ? 'bg-white'
+                                : record?.status === 'absent'
+                                  ? 'bg-white'
+                                  : 'bg-amber-700'
+                          }`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Selected date</p>
+                  <p className="mt-1 font-bold text-[#0b1f4d]">
+                    {new Date(`${selectedAttendanceDate}T00:00:00`).toLocaleDateString(undefined, {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </p>
+                  {selectedAttendanceHoliday ? (
+                    <div className="mt-2">
+                      <span className="inline-flex rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-700">Holiday · {selectedAttendanceHoliday.name}</span>
+                      {selectedAttendanceHoliday.description && (
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{selectedAttendanceHoliday.description}</p>
+                      )}
+                    </div>
+                  ) : selectedAttendanceRecord ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <StatusPill value={selectedAttendanceRecord.status} />
+                      {selectedAttendanceRecord.remarks && <p className="text-sm text-slate-600">{selectedAttendanceRecord.remarks}</p>}
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-sm text-slate-500">No attendance has been recorded for this date.</p>
+                  )}
+                </div>
+                {!attendanceCalendarError && attendanceRecords.length === 0 && attendance?.total ? (
+                  <p className="mt-4 text-center text-sm text-slate-500">
+                    No attendance is recorded for this month yet.
+                  </p>
+                ) : null}
+              </div>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                    <CalendarRange size={19} />
+                  </span>
+                  <div>
+                    <h3 className="font-extrabold text-[#0b1f4d]">Holidays this month</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Declared holidays are shown on your calendar and are not counted as attendance days.
+                    </p>
+                  </div>
+                </div>
+                {attendanceHolidays.length ? (
+                  <ul className="mt-4 divide-y divide-slate-100">
+                    {attendanceHolidays.map((holiday) => (
+                      <li key={holiday._id} className="py-3 first:pt-0 last:pb-0">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAttendanceDate(holiday.startDate)}
+                          className="flex w-full items-start justify-between gap-3 rounded-xl text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          <span>
+                            <span className="block font-semibold text-slate-800">{holiday.name}</span>
+                            {holiday.description && (
+                              <span className="mt-1 block text-sm leading-5 text-slate-600">{holiday.description}</span>
+                            )}
+                          </span>
+                          <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                            {holiday.startDate === holiday.endDate
+                              ? formatDate(holiday.startDate)
+                              : `${formatDate(holiday.startDate)} – ${formatDate(holiday.endDate)}`}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">
+                    No holidays have been declared for this month.
+                  </p>
+                )}
+              </section>
+            </>
           )}
         </section>
       )}
@@ -956,13 +1224,16 @@ export const StudentDashboard: React.FC = () => {
               ) : <p className="mt-5 text-sm text-slate-500">{attendanceError || 'No attendance data has been recorded yet.'}</p>}
             </div>
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-5 sm:col-span-2 sm:p-6">
-              <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><Award size={19} /></span><div><h3 className="font-extrabold text-[#0b1f4d]">Learning milestones</h3><p className="mt-1 text-sm text-slate-500">Homework completion, assessments and rewards are not available in the backend yet.</p></div></div>
+              <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><Award size={19} /></span><div><h3 className="font-extrabold text-[#0b1f4d]">Learning milestones</h3><p className="mt-1 text-sm text-slate-500">Homework progress is available in My Homework. Assessment and rewards tracking will appear when those modules are connected.</p></div></div>
             </div>
           </div>
         </section>
       )}
 
-      {(['subjects', 'homework', 'assignments', 'tests', 'results', 'calendar', 'announcements', 'achievements'] as DashboardTab[]).includes(activeTab) && (
+      {activeTab === 'subjects' && <MySubjectsPanel />}
+      {activeTab === 'homework' && <MyHomeworkPanel />}
+
+      {(['assignments', 'tests', 'results', 'calendar', 'announcements', 'achievements'] as DashboardTab[]).includes(activeTab) && (
         <LearningSectionPage
           section={learningSections.find((section) => section.key === activeTab)!}
           mode={mode}

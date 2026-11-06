@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, ShieldCheck, Heart } from 'lucide-react';
+import { ExternalLink, Heart } from 'lucide-react';
 import { BRAND_CONFIG } from '../../utils/config';
 
 export const Footer: React.FC = () => {
@@ -36,56 +36,70 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="#hero" className="hover:text-brand-cyan transition-colors">
-                  Overview
+                  Home
                 </a>
               </li>
               <li>
                 <a href="#about" className="hover:text-brand-cyan transition-colors">
-                  Teaching Approach
+                  About
                 </a>
               </li>
               <li>
                 <a href="#features" className="hover:text-brand-cyan transition-colors">
-                  Academic Tracking Preview
+                  Features
                 </a>
               </li>
               <li>
-                <a href="#future-saas" className="hover:text-brand-cyan transition-colors">
-                  Platform Roadmap
+                <a href="#founder" className="hover:text-brand-cyan transition-colors">
+                  Founder
                 </a>
               </li>
               <li>
                 <a href="#contact" className="hover:text-brand-cyan transition-colors">
-                  Enquiry & Contact
+                  Contact
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Platform Access */}
+          {/* Contact & Portal */}
           <div>
             <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Portal Access
+              Contact & Student Login
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
+                <a
+                  href={`tel:${BRAND_CONFIG.contact.phoneRaw}`}
+                  className="hover:text-brand-cyan transition-colors"
+                >
+                  Phone: {BRAND_CONFIG.contact.phoneDisplay}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`https://wa.me/${BRAND_CONFIG.contact.whatsappRaw}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-brand-cyan transition-colors"
+                >
+                  WhatsApp
+                </a>
+              </li>
+              {BRAND_CONFIG.contact.email && !BRAND_CONFIG.contact.email.endsWith('.local') && (
+                <li>
+                  <a
+                    href={`mailto:${BRAND_CONFIG.contact.email}`}
+                    className="hover:text-brand-cyan transition-colors"
+                  >
+                    {BRAND_CONFIG.contact.email}
+                  </a>
+                </li>
+              )}
+              <li>
                 <Link to="/student/login" className="hover:text-brand-cyan transition-colors">
-                  Student Portal
+                  Student Login
                 </Link>
-              </li>
-              <li>
-                <Link to="/login?role=guardian" className="hover:text-brand-cyan transition-colors">
-                  Guardian Portal
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin/login" className="hover:text-brand-cyan transition-colors">
-                  Admin & Tutor Workspace
-                </Link>
-              </li>
-              <li className="pt-2 text-xs text-slate-400 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-brand-cyan" />
-                Role-based access control
               </li>
             </ul>
           </div>
@@ -132,4 +146,3 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
-

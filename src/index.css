@@ -4,20 +4,20 @@
 
 :root {
   /* Learnova Brand Colors */
-  --color-brand-primary: #20309A;
-  --color-brand-secondary: #BB232B;
+  --color-brand-primary: #2563EB;
+  --color-brand-secondary: #F59E0B;
   --color-brand-white: #FFFFFF;
 
   /* Theme Colors */
-  --color-brand-surface: #FFFFFF;
-  --color-brand-navy: #20309A;
-  --color-brand-blue: #20309A;
-  --color-brand-cyan: #20309A;
-  --color-brand-gold: #BB232B;
-  --color-brand-text: #1F2937;
+  --color-brand-surface: #F8FAFC;
+  --color-brand-navy: #0B1F4D;
+  --color-brand-blue: #2563EB;
+  --color-brand-cyan: #06B6D4;
+  --color-brand-gold: #F59E0B;
+  --color-brand-text: #334155;
 
   /* Soft backgrounds */
-  --color-brand-blue-light: #EEF0FF;
+  --color-brand-blue-light: #EFF6FF;
   --color-brand-red-light: #FFF0F0;
   --color-brand-border: #E5E7EB;
 }
@@ -30,6 +30,10 @@ html {
   scroll-behavior: smooth;
 }
 
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -39,30 +43,29 @@ body {
     Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Learnova primary brand button */
+/* Keep the legacy brand utility classes aligned with the Learnova palette. */
 .bg-brand-navy {
-  background-color: var(--color-brand-primary);
+  background-color: var(--color-brand-navy);
 }
 
 .text-brand-navy {
-  color: var(--color-brand-primary);
+  color: var(--color-brand-navy);
 }
 
 .bg-brand-blue {
-  background-color: var(--color-brand-primary);
+  background-color: var(--color-brand-blue);
 }
 
 .text-brand-blue {
-  color: var(--color-brand-primary);
+  color: var(--color-brand-blue);
 }
 
-/* Tomato red accents */
 .bg-brand-gold {
-  background-color: var(--color-brand-secondary);
+  background-color: var(--color-brand-gold);
 }
 
 .text-brand-gold {
-  color: var(--color-brand-secondary);
+  color: var(--color-brand-gold);
 }
 
 /* Light brand backgrounds */
@@ -80,4 +83,30 @@ body {
   background-repeat: no-repeat;
   background-position: right -20px top -20px;
   background-size: 240px 240px;
+}
+
+.float-slow {
+  animation: learnova-float 5s ease-in-out infinite;
+}
+
+@keyframes learnova-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

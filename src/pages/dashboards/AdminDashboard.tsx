@@ -15,9 +15,13 @@ import {
   Copy,
   CheckCircle2,
   X,
+  Trash2,
 } from 'lucide-react';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { apiRequest } from '../../lib/api';
+import { ClassSubjectsAdminPanel } from '../../components/dashboards/ClassSubjectsAdminPanel';
+import { HomeworkAdminPanel } from '../../components/dashboards/HomeworkAdminPanel';
+import { EnquiriesAdminPanel } from '../../components/dashboards/EnquiriesAdminPanel';
 
 interface Student {
   _id: string;
@@ -40,8 +44,16 @@ interface AttendanceRecord {
 }
 
 interface AttendanceRow {
-  student: Pick<Student, '_id' | 'name' | 'gradeLevel'>;
+  student: Pick<Student, '_id' | 'name' | 'username' | 'gradeLevel'>;
   attendance: AttendanceRecord | null;
+}
+
+interface Holiday {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
 }
 
 interface AttendanceResponse {
@@ -52,6 +64,10 @@ interface AttendanceResponse {
   };
 }
 
+interface HolidayResponse {
+  data: { holidays: Holiday[]; holiday?: Holiday };
+}
+
 const getLocalDate = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -60,6 +76,14 @@ const getLocalDate = () => {
 
   return `${year}-${month}-${day}`;
 };
+
+const getIndiaDate = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
 
 interface StudentListResponse {
   status: string;
@@ -149,7 +173,7 @@ export function AdminDashboard() {
     initialPassword: string;
   } | null>(null);
   const [copiedCredentials, setCopiedCredentials] = useState(false);
-  const [attendanceDate, setAttendanceDate] = useState(getLocalDate);
+  const [attendanceDate, setAttendanceDate] = useState(getIndiaDate);
   const [attendanceRows, setAttendanceRows] = useState<AttendanceRow[]>([]);
   const [attendanceStatuses, setAttendanceStatuses] = useState<
     Record<string, AttendanceStatus | ''>
@@ -161,11 +185,21 @@ export function AdminDashboard() {
   const [attendanceSaving, setAttendanceSaving] = useState(false);
   const [attendanceError, setAttendanceError] = useState('');
   const [attendanceNotice, setAttendanceNotice] = useState('');
-  const [selectedStudentId, setSelectedStudentId] = useState('');
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
+  const [holidaySaving, setHolidaySaving] = useState(false);
+  const [holidayError, setHolidayError] = useState('');
+  const [holidayNotice, setHolidayNotice] = useState('');
+  const [showHolidayForm, setShowHolidayForm] = useState(false);
+  const [editingHolidayId, setEditingHolidayId] = useState<string | null>(null);
+  const [holidayForm, setHolidayForm] = useState({
+    name: '',
+    startDate: getIndiaDate(),
+    endDate: getIndiaDate(),
+    description: '',
   });
+  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => `${getIndiaDate().slice(0, 7)}-01`);
   const [calendarHistory, setCalendarHistory] = useState<Record<string, AttendanceRecord | null>>({});
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState('');
@@ -264,6 +298,23 @@ export function AdminDashboard() {
     }
   }, [activeTab, loadAttendance]);
 
+  const loadHolidays = useCallback(async () => {
+    setHolidaysLoading(true);
+    setHolidayError('');
+    try {
+      const response = await apiRequest<HolidayResponse>('/attendance/holidays');
+      setHolidays(response.data.holidays);
+    } catch (err) {
+      setHolidayError(err instanceof Error ? err.message : 'Unable to load holidays.');
+    } finally {
+      setHolidaysLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'attendance') void loadHolidays();
+  }, [activeTab, loadHolidays]);
+
   useEffect(() => {
     const firstActiveStudent = students.find((student) => !student.isArchived);
     if (!selectedStudentId && firstActiveStudent) {
@@ -356,19 +407,44 @@ export function AdminDashboard() {
     (student) => student._id === selectedStudentId
   );
 
+  const selectedDateHoliday = holidays.find(
+    (holiday) => attendanceDate >= holiday.startDate && attendanceDate <= holiday.endDate
+  );
+  const attendanceCounts = useMemo(() => {
+    const counts = { present: 0, absent: 0, leave: 0, unmarked: 0 };
+    if (selectedDateHoliday) {
+      counts.unmarked = attendanceRows.length;
+      return counts;
+    }
+    attendanceRows.forEach((row) => {
+      const status = attendanceStatuses[row.student._id];
+      if (status === 'present') counts.present += 1;
+      else if (status === 'absent') counts.absent += 1;
+      else if (status === 'leave') counts.leave += 1;
+      else counts.unmarked += 1;
+    });
+    return counts;
+  }, [attendanceRows, attendanceStatuses, selectedDateHoliday]);
+
   const handleSaveAttendance = async () => {
-    const entries = attendanceRows
-      .filter((row) => attendanceStatuses[row.student._id] !== '')
-      .map((row) => ({
+    const entries = attendanceRows.map((row) => ({
         studentId: row.student._id,
-        status: attendanceStatuses[row.student._id] as AttendanceStatus,
+        status: attendanceStatuses[row.student._id] ?? '',
         ...(attendanceRemarks[row.student._id]?.trim()
           ? { remarks: attendanceRemarks[row.student._id].trim() }
           : {}),
       }));
 
-    if (entries.length === 0) {
-      setAttendanceError('Mark at least one student before saving.');
+    if (attendanceRows.length === 0) {
+      setAttendanceError('There are no active students to save attendance for.');
+      return;
+    }
+    if (attendanceDate > getIndiaDate()) {
+      setAttendanceError('Attendance cannot be saved for a future date.');
+      return;
+    }
+    if (selectedDateHoliday) {
+      setAttendanceError(`Attendance cannot be marked during ${selectedDateHoliday.name}.`);
       return;
     }
 
@@ -377,8 +453,8 @@ export function AdminDashboard() {
     setAttendanceNotice('');
 
     try {
-      await apiRequest<AttendanceResponse>('/attendance', {
-        method: 'PUT',
+      await apiRequest<AttendanceResponse>('/attendance/bulk', {
+        method: 'POST',
         body: JSON.stringify({
           date: attendanceDate,
           entries,
@@ -393,6 +469,103 @@ export function AdminDashboard() {
       );
     } finally {
       setAttendanceSaving(false);
+    }
+  };
+
+  const handleBulkAttendance = async (status: AttendanceStatus | '') => {
+    if (!attendanceRows.length) return;
+    const label = status ? `Mark all students ${status}` : 'Reset all students to unmarked';
+    const confirmation = `${label} for ${attendanceDate}? This will save the changes immediately.`;
+    if (!window.confirm(confirmation)) return;
+    if (attendanceDate > getIndiaDate()) {
+      setAttendanceError('Attendance cannot be saved for a future date.');
+      return;
+    }
+    if (selectedDateHoliday) {
+      setAttendanceError(`Attendance cannot be marked during ${selectedDateHoliday.name}.`);
+      return;
+    }
+
+    setAttendanceSaving(true);
+    setAttendanceError('');
+    setAttendanceNotice('');
+    const entries = attendanceRows.map((row) => ({
+      studentId: row.student._id,
+      status,
+      ...(attendanceRemarks[row.student._id]?.trim()
+        ? { remarks: attendanceRemarks[row.student._id].trim() }
+        : {}),
+    }));
+    try {
+      await apiRequest<AttendanceResponse>('/attendance/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ date: attendanceDate, entries }),
+      });
+      setAttendanceStatuses(Object.fromEntries(
+        attendanceRows.map((row) => [row.student._id, status])
+      ));
+      setAttendanceNotice(status
+        ? `All students marked ${status} and saved.`
+        : 'Attendance reset to unmarked and saved.');
+      await loadAttendance();
+    } catch (err) {
+      setAttendanceError(err instanceof Error ? err.message : 'Unable to save bulk attendance.');
+    } finally {
+      setAttendanceSaving(false);
+    }
+  };
+
+  const resetHolidayForm = () => {
+    setHolidayForm({
+      name: '',
+      startDate: attendanceDate,
+      endDate: attendanceDate,
+      description: '',
+    });
+    setEditingHolidayId(null);
+    setShowHolidayForm(false);
+  };
+
+  const handleSaveHoliday = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setHolidaySaving(true);
+    setHolidayError('');
+    setHolidayNotice('');
+    try {
+      const path = editingHolidayId
+        ? `/attendance/holidays/${editingHolidayId}`
+        : '/attendance/holidays';
+      await apiRequest<HolidayResponse>(path, {
+        method: editingHolidayId ? 'PUT' : 'POST',
+        body: JSON.stringify({
+          ...holidayForm,
+          ...(holidayForm.description.trim()
+            ? { description: holidayForm.description.trim() }
+            : { description: '' }),
+        }),
+      });
+      setHolidayNotice(editingHolidayId ? 'Holiday updated.' : 'Holiday declared.');
+      resetHolidayForm();
+      await loadHolidays();
+      await loadAttendance();
+    } catch (err) {
+      setHolidayError(err instanceof Error ? err.message : 'Unable to save holiday.');
+    } finally {
+      setHolidaySaving(false);
+    }
+  };
+
+  const handleDeleteHoliday = async (holiday: Holiday) => {
+    if (!window.confirm(`Delete the holiday "${holiday.name}"?`)) return;
+    setHolidayError('');
+    setHolidayNotice('');
+    try {
+      await apiRequest(`/attendance/holidays/${holiday._id}`, { method: 'DELETE' });
+      setHolidayNotice('Holiday deleted.');
+      await loadHolidays();
+      await loadAttendance();
+    } catch (err) {
+      setHolidayError(err instanceof Error ? err.message : 'Unable to delete holiday.');
     }
   };
 
@@ -1110,14 +1283,18 @@ export function AdminDashboard() {
         </section>
       )}
 
+      {activeTab === 'classes' && <ClassSubjectsAdminPanel />}
+      {activeTab === 'homework' && <HomeworkAdminPanel />}
+      {activeTab === 'enquiries' && <EnquiriesAdminPanel />}
+
       {activeTab === 'attendance' ? (
         <section className="space-y-5">
           <div>
             <h2 className="text-2xl font-bold text-brand-navy">
-              Student Attendance Calendar
+              Attendance Management
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Select a student to view attendance saved for each date.
+              Review attendance by date, update student statuses, and manage holidays.
             </p>
           </div>
 
@@ -1178,7 +1355,7 @@ export function AdminDashboard() {
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-green-600" />Present</span>
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-red-600" />Absent</span>
                 <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-yellow-400" />Leave</span>
-                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-slate-200" />No record</span>
+                <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-slate-300" />Holiday</span>
               </div>
 
               {calendarLoading ? (
@@ -1193,9 +1370,14 @@ export function AdminDashboard() {
                   {calendarDays.map((item) => {
                     if (!item.date) return <div key={item.key} />;
                     const record = calendarHistory[item.date] ?? null;
+                    const holiday = holidays.find(
+                      (itemHoliday) => item.date >= itemHoliday.startDate && item.date <= itemHoliday.endDate
+                    );
                     const isSelected = item.date === attendanceDate;
                     const statusClass =
-                      record?.status === 'present'
+                      holiday
+                        ? 'bg-slate-300 text-slate-700 hover:bg-slate-400'
+                        : record?.status === 'present'
                         ? 'bg-green-600 text-white hover:bg-green-700'
                         : record?.status === 'absent'
                           ? 'bg-red-600 text-white hover:bg-red-700'
@@ -1207,7 +1389,7 @@ export function AdminDashboard() {
                         type="button"
                         key={item.key}
                         onClick={() => setAttendanceDate(item.date)}
-                        title={record ? `${item.date}: ${record.status}${record.remarks ? ` — ${record.remarks}` : ''}` : `${item.date}: No attendance record`}
+                        title={holiday ? `${item.date}: Holiday — ${holiday.name}` : record ? `${item.date}: ${record.status}${record.remarks ? ` — ${record.remarks}` : ''}` : `${item.date}: No attendance record`}
                         className={`min-h-12 rounded-lg p-2 text-sm font-semibold transition ${statusClass} ${isSelected ? 'ring-2 ring-brand-navy ring-offset-2' : ''}`}
                       >
                         {item.day}
@@ -1218,7 +1400,7 @@ export function AdminDashboard() {
               )}
               {selectedStudentId && !calendarLoading && (
                 <p className="mt-4 text-xs text-slate-500">
-                  Click a date to select it below. Calendar colors reflect saved database records only.
+                  Click a date to select it below. Holiday dates are shaded grey.
                 </p>
               )}
             </div>
@@ -1242,12 +1424,18 @@ export function AdminDashboard() {
             </div>
             <label className="text-sm font-medium text-slate-700">
               <span className="mb-1 flex items-center gap-2"><CalendarDays size={16} />Attendance date</span>
-              <input type="date" className={inputClass} value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
+              <input type="date" max={getIndiaDate()} className={inputClass} value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
             </label>
             <button type="button" onClick={() => void loadAttendance()} disabled={attendanceLoading} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium disabled:opacity-50">
               <RefreshCw size={15} />Refresh day
             </button>
           </div>
+
+          {selectedDateHoliday && (
+            <div role="status" className="rounded-xl border border-slate-300 bg-slate-100 p-3 text-sm text-slate-700">
+              <strong>{selectedDateHoliday.name}</strong> is declared as a holiday for this date. Attendance cannot be marked.
+            </div>
+          )}
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {attendanceLoading ? (
@@ -1256,20 +1444,44 @@ export function AdminDashboard() {
               <p className="p-8 text-center text-sm text-slate-500">No active students found. Add or restore students before marking attendance.</p>
             ) : (
               <>
+                <div className="space-y-4 border-b border-slate-200 p-4">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    {[
+                      ['Students', attendanceRows.length, 'text-brand-navy'],
+                      ['Present', attendanceCounts.present, 'text-emerald-700'],
+                      ['Absent', attendanceCounts.absent, 'text-rose-700'],
+                      ['Leave', attendanceCounts.leave, 'text-amber-700'],
+                      ['Unmarked', attendanceCounts.unmarked, 'text-slate-600'],
+                    ].map(([label, count, color]) => (
+                      <div key={label} className="rounded-xl bg-slate-50 p-3">
+                        <p className="text-xs font-medium text-slate-500">{label}</p>
+                        <p className={`mt-1 text-xl font-bold ${color}`}>{count}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void handleBulkAttendance('present')} disabled={attendanceSaving || Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 disabled:opacity-50">Mark All Present</button>
+                    <button type="button" onClick={() => void handleBulkAttendance('absent')} disabled={attendanceSaving || Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800 disabled:opacity-50">Mark All Absent</button>
+                    <button type="button" onClick={() => void handleBulkAttendance('leave')} disabled={attendanceSaving || Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 disabled:opacity-50">Mark All Leave</button>
+                    <button type="button" onClick={() => void handleBulkAttendance('')} disabled={attendanceSaving || Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50">Reset Unmarked</button>
+                  </div>
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
-                      <tr><th className="px-4 py-3">Student</th><th className="px-4 py-3">Class</th><th className="px-4 py-3">Attendance</th><th className="px-4 py-3">Remarks (optional)</th></tr>
+                      <tr><th className="px-4 py-3">Student Name</th><th className="px-4 py-3">Username</th><th className="px-4 py-3">Class</th><th className="px-4 py-3">Attendance Status</th><th className="px-4 py-3">Remarks (optional)</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {attendanceRows.map((row) => (
                         <tr key={row.student._id}>
                           <td className="px-4 py-3 font-medium text-brand-navy">{row.student.name}</td>
+                          <td className="px-4 py-3 text-slate-600">{row.student.username || '—'}</td>
                           <td className="px-4 py-3">{row.student.gradeLevel || 'Not provided'}</td>
                           <td className="px-4 py-3">
                             <select
                               className={inputClass}
                               value={attendanceStatuses[row.student._id] ?? ''}
+                              disabled={Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()}
                               onChange={(event) => {
                                 const value = event.target.value as AttendanceStatus | '';
                                 setAttendanceStatuses((previous) => ({ ...previous, [row.student._id]: value }));
@@ -1279,7 +1491,7 @@ export function AdminDashboard() {
                             </select>
                           </td>
                           <td className="px-4 py-3">
-                            <input className={inputClass} maxLength={500} placeholder="Optional note" value={attendanceRemarks[row.student._id] ?? ''} onChange={(event) => setAttendanceRemarks((previous) => ({ ...previous, [row.student._id]: event.target.value }))} />
+                            <input disabled={Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className={inputClass} maxLength={500} placeholder="Optional note" value={attendanceRemarks[row.student._id] ?? ''} onChange={(event) => setAttendanceRemarks((previous) => ({ ...previous, [row.student._id]: event.target.value }))} />
                           </td>
                         </tr>
                       ))}
@@ -1288,16 +1500,87 @@ export function AdminDashboard() {
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-4">
                   <p className="text-sm text-slate-500">
-                    {attendanceRows.filter((row) => attendanceStatuses[row.student._id] !== '').length} of {attendanceRows.length} students marked
+                    {attendanceRows.length - attendanceCounts.unmarked} of {attendanceRows.length} students marked
                   </p>
-                  <button type="button" onClick={() => void handleSaveAttendance()} disabled={attendanceSaving || attendanceLoading} className="inline-flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                  <button type="button" onClick={() => void handleSaveAttendance()} disabled={attendanceSaving || attendanceLoading || Boolean(selectedDateHoliday) || attendanceDate > getIndiaDate()} className="inline-flex items-center gap-2 rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                     <Save size={16} />{attendanceSaving ? 'Saving…' : 'Save Attendance'}
                   </button>
                 </div>
               </>
             )}
           </div>
-        </section>) : !['overview', 'students', 'fees'].includes(activeTab) ? (
+
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold text-brand-navy">Holiday Management</h3>
+                <p className="mt-1 text-sm text-slate-500">Declared holiday dates are excluded from attendance.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHolidayForm({ name: '', startDate: attendanceDate, endDate: attendanceDate, description: '' });
+                  setEditingHolidayId(null);
+                  setShowHolidayForm((shown) => !shown);
+                  setHolidayError('');
+                }}
+                className="rounded-lg bg-brand-navy px-4 py-2 text-sm font-semibold text-white"
+              >
+                {showHolidayForm ? 'Close form' : 'Declare Holiday'}
+              </button>
+            </div>
+            {holidayError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{holidayError}</p>}
+            {holidayNotice && <p role="status" className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">{holidayNotice}</p>}
+            {showHolidayForm && (
+              <form onSubmit={handleSaveHoliday} className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+                <label className="text-sm font-medium text-slate-700">Holiday name *
+                  <input required maxLength={100} className={`${inputClass} mt-1`} value={holidayForm.name} onChange={(event) => setHolidayForm((current) => ({ ...current, name: event.target.value }))} />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-sm font-medium text-slate-700">Start date *
+                    <input required type="date" className={`${inputClass} mt-1`} value={holidayForm.startDate} onChange={(event) => setHolidayForm((current) => ({ ...current, startDate: event.target.value }))} />
+                  </label>
+                  <label className="text-sm font-medium text-slate-700">End date *
+                    <input required type="date" min={holidayForm.startDate} className={`${inputClass} mt-1`} value={holidayForm.endDate} onChange={(event) => setHolidayForm((current) => ({ ...current, endDate: event.target.value }))} />
+                  </label>
+                </div>
+                <label className="text-sm font-medium text-slate-700 sm:col-span-2">Description (optional)
+                  <textarea rows={2} maxLength={500} className={`${inputClass} mt-1`} value={holidayForm.description} onChange={(event) => setHolidayForm((current) => ({ ...current, description: event.target.value }))} />
+                </label>
+                <div className="flex gap-2 sm:col-span-2">
+                  <button disabled={holidaySaving} className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{holidaySaving ? 'Saving…' : editingHolidayId ? 'Update Holiday' : 'Save Holiday'}</button>
+                  <button type="button" onClick={resetHolidayForm} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                </div>
+              </form>
+            )}
+            {holidaysLoading ? (
+              <p className="text-sm text-slate-500">Loading holidays…</p>
+            ) : holidays.length === 0 ? (
+              <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">No holidays have been declared.</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {holidays.map((holiday) => (
+                  <li key={holiday._id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                    <div>
+                      <p className="font-semibold text-brand-navy">{holiday.name}</p>
+                      <p className="mt-1 text-xs text-slate-500">{holiday.startDate === holiday.endDate ? holiday.startDate : `${holiday.startDate} to ${holiday.endDate}`}</p>
+                      {holiday.description && <p className="mt-1 text-sm text-slate-600">{holiday.description}</p>}
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" aria-label={`Edit ${holiday.name}`} onClick={() => {
+                        setHolidayForm({ name: holiday.name, startDate: holiday.startDate, endDate: holiday.endDate, description: holiday.description ?? '' });
+                        setEditingHolidayId(holiday._id);
+                        setShowHolidayForm(true);
+                        setHolidayError('');
+                      }} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"><Pencil size={16} /></button>
+                      <button type="button" aria-label={`Delete ${holiday.name}`} onClick={() => void handleDeleteHoliday(holiday)} className="rounded-lg border border-red-100 p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </section>        ) : !['overview', 'students', 'fees', 'classes', 'homework', 'enquiries'].includes(activeTab) ? (
           <section className="rounded-2xl border border-slate-200 bg-white p-8">
             <h2 className="text-xl font-bold text-brand-navy">
               {activeTab === 'classes'

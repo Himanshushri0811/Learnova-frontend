@@ -14,9 +14,9 @@ export const BRAND_CONFIG = {
   },
   contact: {
     // Configurable via VITE_BRAND_PHONE_DISPLAY / VITE_BRAND_PHONE_RAW in .env
-    phoneDisplay: import.meta.env.VITE_BRAND_PHONE_DISPLAY || 'Contact via Enquiry / WhatsApp',
-    phoneRaw: import.meta.env.VITE_BRAND_PHONE_RAW || '',
-    whatsappRaw: import.meta.env.VITE_BRAND_WHATSAPP || '',
+    phoneDisplay: import.meta.env.VITE_BRAND_PHONE_DISPLAY || '6389687238',
+    phoneRaw: import.meta.env.VITE_BRAND_PHONE_RAW || '6389687238',
+    whatsappRaw: import.meta.env.VITE_BRAND_WHATSAPP || '916389687238',
     email: import.meta.env.VITE_BRAND_EMAIL || 'contact@learnova.local',
   },
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
